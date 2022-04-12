@@ -1,17 +1,38 @@
 const fs = require('fs');
+const morgan = require('morgan');
 const express = require('express');
 const app = express();
-
-app.use(express.json());
 
 const tours = JSON.parse(
   fs.readFileSync(`${__dirname}/dev-data/data/tours-simple.json`, 'utf-8')
 );
 
+const users = JSON.parse(
+  fs.readFileSync(`${__dirname}/dev-data/data/users.json`, 'utf-8')
+);
+
+// MIDDLEWARE
+app.use(morgan('dev'));
+
+app.use(express.json());
+
+app.use((req, res, next) => {
+  console.log('Hello from the middleware');
+  next();
+});
+
+app.use((req, res, next) => {
+  req.requestTime = new Date().toISOString();
+  next();
+});
+
+// ROUTE HANDLERS
 const getAllTours = (req, res) => {
+  console.log(req.requestTime);
   res.status(200).json({
     status: 'success',
     tours: tours.length,
+    requestedAt: req.requestTime,
     data: {
       tours,
     },
@@ -99,18 +120,63 @@ const deleteTour = (req, res) => {
   });
 };
 
+const getAllUsers = (req, res) => {
+  res.status(200).json({
+    status: 'success',
+    users: users.length,
+    data: {
+      users,
+    },
+  });
+};
+
+const getUser = (req, res) => {
+  res.status(500).json({
+    status: 'error',
+    message: 'This route has not been defined',
+  });
+};
+
+const createUser = (req, res) => {
+  res.status(500).json({
+    status: 'error',
+    message: 'This route has not been defined',
+  });
+};
+
+const updateUser = (req, res) => {
+  res.status(500).json({
+    status: 'error',
+    message: 'This route has not been defined',
+  });
+};
+
+const deleteUser = (req, res) => {
+  res.status(500).json({
+    status: 'error',
+    message: 'This route has not been defined',
+  });
+};
+
+// ROUTES
 // app.get('/api/v1/tours', getAllTours);
 // app.get('/api/v1/tours/:id', getTour);
 // app.post('/api/v1/tours', createTour);
 // app.patch('/api/v1/tours/:id', updateTour);
 // app.delete('/api/v1/tours/:id', deleteTour);
 
-app.route('/api/v1/tours').get(getAllTours).post(createTour);
-app
-  .route('/api/v1/tours/:id')
-  .get(getTour)
-  .patch(updateTour)
-  .delete(deleteTour);
+// BETTER WAY TO DO ROUTES - DO IT THIS WAY
+const tourRouter = express.Router();
+const usersRouter = express.Router();
 
+tourRouter.route('/').get(getAllTours).post(createTour);
+tourRouter.route('/:id').get(getTour).patch(updateTour).delete(deleteTour);
+app.use('/api/v1/tours', tourRouter); // mounting a router
+
+usersRouter.route('/').get(getAllUsers).post(createUser);
+usersRouter.route('/:id').get(getUser).patch(updateUser).delete(deleteUser);
+app.use('/api/v1/users', usersRouter); // mounting a router
+
+// SERVER
 const port = 3000;
 app.listen(port, () => console.log(`Application running on ${port}...`));
