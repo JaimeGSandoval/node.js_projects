@@ -7,7 +7,7 @@ const tours = JSON.parse(
 exports.checkID = (req, res, next, val) => {
   // console.log(`Tour id is: ${val}`);
 
-  if (req.params.id * 1 > tours.length || isNaN(req.params.id)) {
+  if (req.params.id * 1 > tours.length || Number.isNaN(req.params.id)) {
     return res.status(404).json({
       status: 'fail',
       message: 'Invalid ID',
@@ -42,7 +42,7 @@ exports.getAllTours = (req, res) => {
 exports.getTour = (req, res) => {
   const id = req.params.id * 1;
 
-  const tour = tours.find((tour) => tour.id === id);
+  const tour = tours.find((tourData) => tourData.id === id);
 
   res.status(200).json({
     status: 'success',
@@ -55,7 +55,8 @@ exports.getTour = (req, res) => {
 exports.createTour = (req, res) => {
   const newId = tours[tours.length - 1].id + 1;
   // could've done req.body.id = newId, but that would've mutated the original req.body object
-  const newTour = Object.assign({ id: newId }, req.body);
+  // const newTour = Object.assign({ id: newId }, req.body);
+  const newTour = { id: newId, ...req.body };
 
   tours.push(newTour);
 
@@ -74,7 +75,7 @@ exports.createTour = (req, res) => {
 };
 
 exports.updateTour = (req, res) => {
-  const id = req.params.id * 1;
+  // const id = req.params.id * 1;
 
   res.status(200).json({
     status: 'success',
@@ -85,7 +86,7 @@ exports.updateTour = (req, res) => {
 };
 
 exports.deleteTour = (req, res) => {
-  const id = req.params.id * 1;
+  // const id = req.params.id * 1;
 
   res.status(204).json({
     status: 'success',
