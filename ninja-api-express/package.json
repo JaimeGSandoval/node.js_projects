@@ -1,0 +1,31 @@
+{
+  "name": "ninja-api-express",
+  "version": "1.0.0",
+  "description": "'An api project to practice what I've learned'",
+  "main": "app.js",
+  "engines": {
+    "node": ">= 16.0.0"
+  },
+  "scripts": {
+    "start:dev": "nodemon ./server/server.js"
+  },
+  "author": "Jaime Sandoval",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^16.0.0",
+    "express": "^4.17.3",
+    "morgan": "^1.10.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.13.0",
+    "eslint-config-airbnb": "^19.0.4",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-plugin-import": "^2.26.0",
+    "eslint-plugin-jsx-a11y": "^6.5.1",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-prettier": "^4.0.0",
+    "eslint-plugin-react": "^7.29.4",
+    "nodemon": "^2.0.15",
+    "prettier": "^2.6.2"
+  }
+}
