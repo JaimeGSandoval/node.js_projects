@@ -1,0 +1,30 @@
+{
+  "name": "ninja-api",
+  "version": "1.0.0",
+  "description": "'A practice API to solidify what I've learned'",
+  "main": "index.js",
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "scripts": {
+    "start:dev": "nodemon ./server/server.js"
+  },
+  "author": "Jaime Sandoval",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^16.0.0",
+    "morgan": "^1.10.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.13.0",
+    "eslint-config-airbnb": "^19.0.4",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-plugin-import": "^2.26.0",
+    "eslint-plugin-jsx-a11y": "^6.5.1",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-prettier": "^4.0.0",
+    "eslint-plugin-react": "^7.29.4",
+    "nodemon": "^2.0.15",
+    "prettier": "^2.6.2"
+  }
+}
