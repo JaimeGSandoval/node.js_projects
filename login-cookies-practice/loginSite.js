@@ -21,5 +21,22 @@ app.get('/login', (req, res, next) => {
   res.render('login');
 });
 
+app.get('/welcome', (req, res, next) => {
+  res.send('Welcome');
+});
+
+app.post('/process_login', (req, res, next) => {
+  const username = req.body.username;
+  const password = req.body.password;
+
+  if (password === 'x') {
+    res.cookie('username', username);
+    res.redirect('/welcome');
+  } else {
+    res.direct('/login?message=fail');
+  }
+  res.json(req.body);
+});
+
 const port = process.env.PORT;
 app.listen(port || 3000, () => console.log(`I'm listening on port ${port}...`));
