@@ -1,0 +1,35 @@
+<!-- <% for (let i=0; i < 10; i++) { %>
+  <li>
+    <%= i %>
+  </li>
+  <% } %>
+
+    <% for (let i=0; i < 10; i++) { %>
+      <% if(i % 2===0) { txt="even" %>
+        <% } else { txt="odd" } %>
+          <li>
+            <%= i %> - <%= txt %>
+          </li>
+          <% } %> -->
+<!-- <h1>
+  <%= message %>
+</h1>
+<h1>
+  <%= message2 %>
+</h1> -->
+
+<!-- You don't have to use locals.property to access any of the values. It's already known that you're accessing res.locals-->
+<h1>
+  <%= locals.message%>
+</h1>
+<h1>
+  <%= locals.message2 %>
+</h1>
+
+<h1>
+  <%= locals.validated %>
+</h1>
+
+<div>
+  <%- html %>
+</div>

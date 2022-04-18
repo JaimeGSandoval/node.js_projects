@@ -1,0 +1,18 @@
+<h1>HBS Rendered file!</h1>
+
+Your message is: {{msg2}} !!!!
+
+{{!-- You cannot just drop in html because it's not escaped data. Handlebars is not sure whether this is safe to put in, so it won't interpret it. It'll just insert it into the dom as a string. If you know that tthe source of the daais safe, you can escape it by doing triple handlebars --}}
+{{{html}}}
+
+{{!-- access the properties of data sent through --}}
+{{!-- Country name: {{country.name}}
+Country capital: {{country.capital}} --}}
+
+{{!-- helpers #each is the equivalent of a for each loop --}}
+{{!-- each, if, unless --}}
+{{#each countries}}
+    {{#unless this.western}}
+        {{> countries}}
+    {{/unless}}
+{{/each}}
