@@ -16,3 +16,5 @@
 /login-practice/.env
 /login-practice/node_modules
 /express-generator-example
+/movieFanSite/node_modules
+/movieFanSite/.env
