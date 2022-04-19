@@ -12,6 +12,7 @@
 /ninja-api-express/node_modules
 /SSR-practice/node_modules
 /SSR-practice/**txt
-/login-cookies-practice/login_starter_files
-/login-cookies-practice/.env
-/login-cookies-practice/node_modules
+/login-practice/login_starter_files
+/login-practice/.env
+/login-practice/node_modules
+/express-generator-example
