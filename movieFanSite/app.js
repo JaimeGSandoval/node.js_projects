@@ -3,11 +3,75 @@ const express = require('express');
 const path = require('path');
 const cookieParser = require('cookie-parser');
 const logger = require('morgan');
+const helmet = require('helmet');
 
 const indexRouter = require('./routes/index');
-const usersRouter = require('./routes/users');
 
 const app = express();
+
+// Works for bot CDNs and images
+app.use(
+  helmet.contentSecurityPolicy({
+    directives: {
+      imgSrc: ["'self'", 'https: data:'],
+      defaultSrc: [
+        "'self'",
+        'https://*.googleapis.com/',
+        'https://*.bootstrapcdn.com/',
+        'https://*.gstatic.com/',
+        'https://image.tmdb.org/',
+      ],
+      objectSrc: ["'none'"],
+      upgradeInsecureRequests: [],
+      scriptSrc: [
+        "'self'",
+        "'unsafe-inline'",
+        'maxcdn.bootstrapcdn.com',
+        'ajax.googleapis.com',
+      ],
+    },
+  })
+);
+
+// works for both CDNs and images
+// app.use(
+//   helmet({
+//     contentSecurityPolicy: false,
+//     crossOriginEmbedderPolicy: false,
+//   })
+// );
+
+// doesn't work for images or CDNs
+// app.use(
+//   helmet({
+//     contentSecurityPolicy: {
+//       directives: {
+//         defaultSrc: ["'self'"],
+//         styleSrc: ["'self'", 'https:', "'unsafe-inline'"],
+//         fontSrc: ["'self'", 'https:', 'data:'],
+//         imgSrc: ["'self'", 'https://image.tmdb.org'],
+//         scriptSrc: ["'self'", "'unsafe-inline'"],
+//         blockAllMixedContent: [],
+//         upgradeInsecureRequests: [],
+//         baseUri: ["'self'"],
+//         frameAncestors: ["'self'"],
+//       },
+//     },
+//   })
+// );
+
+// works for images but not CDNs
+// app.use(
+//   helmet.contentSecurityPolicy({
+//     useDefaults: true,
+//     directives: {
+//       'img-src': ["'self'", 'https: data:'],
+//     },
+//   }),
+//   helmet.crossOriginResourcePolicy({
+//     policy: 'cross-origin',
+//   })
+// );
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -20,7 +84,6 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', indexRouter);
-app.use('/users', usersRouter);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
