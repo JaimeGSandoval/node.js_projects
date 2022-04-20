@@ -18,3 +18,5 @@
 /express-generator-example
 /movieFanSite/node_modules
 /movieFanSite/.env
+/movieAPI/node_modules
+/movieAPI/.env
