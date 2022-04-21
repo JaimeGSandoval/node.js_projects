@@ -34,6 +34,14 @@ app.use(
   })
 );
 
+app.use((req, res, next) => {
+  if (req.query.api_key != 123456789) {
+    res.status(401).json('Invalid API key');
+  } else {
+    next();
+  }
+});
+
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
