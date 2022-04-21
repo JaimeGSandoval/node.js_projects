@@ -4,13 +4,13 @@ const path = require('path');
 const cookieParser = require('cookie-parser');
 const logger = require('morgan');
 const helmet = require('helmet');
-
 const indexRouter = require('./routes/index');
 const movieRouter = require('./routes/movie');
 const searchRouter = require('./routes/search');
 const { ppid } = require('process');
 
 const app = express();
+
 app.use(
   helmet.contentSecurityPolicy({
     directives: {
@@ -34,13 +34,15 @@ app.use(
   })
 );
 
-app.use((req, res, next) => {
+const validateAPIKey = (req, res, next) => {
   if (req.query.api_key != 123456789) {
     res.status(401).json('Invalid API key');
   } else {
     next();
   }
-});
+};
+
+app.use(validateAPIKey);
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
