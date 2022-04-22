@@ -20,5 +20,7 @@
 /movieFanSite/.env
 /movieAPI/node_modules
 /node-express-form-pug/node_modules
-/login-session-cookies/node_modules
+/login-session/node_modules
 /middleware_app/node_modules
+/morgan_logger_app/node_modules
+/file_sending_example/node_modules
