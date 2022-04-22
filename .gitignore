@@ -20,3 +20,4 @@
 /movieFanSite/.env
 /movieAPI/node_modules
 /node-express-form-pug/node_modules
+/login-session-cookies/node_modules
