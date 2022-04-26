@@ -27,4 +27,5 @@
 /routing_app/node_modules
 /JWT_authentication/node_modules
 /JWT_authentication/.env
-/JWT-Access-Refresh-Tokens/
+/JWT-Access-Refresh-Tokens/ui/node_modules
+/JWT-Access-Refresh-Tokens/api/node_modules
