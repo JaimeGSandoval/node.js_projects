@@ -1,3 +1,7 @@
+body {
+  background: #333;
+}
+
 .App {
   padding: 2rem;
   width: 100%;
@@ -29,11 +33,11 @@ button {
   width: 100%;
 }
 
-input{
+input {
   margin-bottom: 1rem;
   padding: 1rem;
 }
 
-h2{
+h2 {
   margin: 0;
 }
