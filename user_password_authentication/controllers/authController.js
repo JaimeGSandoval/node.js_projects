@@ -1,4 +1,9 @@
+require('dotenv/config');
 const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+// fsPromises is just to mimic calls to a DB
+const fsPromises = require('fs').promises;
+const path = require('path');
 
 const usersDB = {
   users: require('../model/users.json'),
@@ -31,9 +36,42 @@ const handleLogin = async (req, res) => {
   const match = await bcrypt.compare(pwd, foundUser.password);
 
   if (match) {
+    const accessToken = jwt.sign(
+      { username: foundUser.username },
+      process.env.ACCESS_TOKEN_SECRET,
+      { expiresIn: '30s' }
+    );
+
+    const refreshToken = jwt.sign(
+      { username: foundUser.username },
+      process.env.REFRESH_TOKEN_SECRET,
+      {
+        expiresIn: '1d',
+      }
+    );
+
+    // save refresh token with current user
+    const otherUsers = usersDB.users.filter(
+      (person) => person.username !== foundUser.username
+    );
+    const currentUser = { ...foundUser, refreshToken };
+    usersDB.setUsers([...otherUsers, currentUser]);
+    await fsPromises.writeFile(
+      path.join(__dirname, '..', 'model', 'users.json'),
+      JSON.stringify(usersDB.users)
+    );
+
+    // 24 * 60 * 60 * 1000 = 1 day
+    res.cookie('jwt', refreshToken, {
+      httpOnly: true,
+      maxAge: 24 * 60 * 60 * 1000,
+    });
     res.status(200).json({
       status: 'success',
       message: `User ${user} is logged in`,
+      data: {
+        accessToken,
+      },
     });
   } else {
     res.status(401).json({
