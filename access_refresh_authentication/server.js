@@ -3,15 +3,21 @@ const express = require('express');
 const app = express();
 const path = require('path');
 const cors = require('cors');
+const cookieParser = require('cookie-parser');
 const corsOptions = require('./config/corsOptions');
 const { logger } = require('./middleware/logEvents');
 const errorHandler = require('./middleware/errorHandler');
 const verifyJWT = require('./middleware/verifyJWT');
-const cookieParser = require('cookie-parser');
+const credentials = require('./middleware/credentials');
+
 const PORT = process.env.PORT || 3500;
 
 // custom middleware logger
 app.use(logger);
+
+// handle options credentials check - before CORS!
+// and fetch cookies credentials requirement
+app.use(credentials);
 
 // Cross Origin Resource Sharing
 app.use(cors(corsOptions));
@@ -32,6 +38,7 @@ app.use('/', require('./routes/root'));
 app.use('/register', require('./routes/register'));
 app.use('/auth', require('./routes/auth'));
 app.use('/refresh', require('./routes/refresh'));
+app.use('/logout', require('./routes/logout'));
 
 // verifyJWT goes here after the middleware for the routes above because if it went before the program would never make it past any of them because no access token is granted until after the user gets authenticated in the /auth controller
 // So everything that you don't want to run verifyJWT through goes above
