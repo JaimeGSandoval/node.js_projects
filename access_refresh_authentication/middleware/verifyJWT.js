@@ -3,12 +3,10 @@ const jwt = require('jsonwebtoken');
 const cookie = require('cookie-parser');
 
 const verifyJWT = (req, res, next) => {
-  const authHeader = req.headers['authorization'];
-  if (!authHeader) {
-    return res.status(401).json({
-      status: 'fail',
-      message: 'Auth header has no value ',
-    });
+  const authHeader = req.headers.authorization || req.header.Authorization;
+
+  if (!authHeader?.startsWith('Bearer ')) {
+    return res.sendStatus(401);
   }
 
   console.log(authHeader); // Bearer token
@@ -18,7 +16,8 @@ const verifyJWT = (req, res, next) => {
       return res.sendStatus(403); // unauthorized
     }
 
-    req.user = decodeToken.username;
+    req.user = decodeToken.UserInfo.username;
+    req.roles = decodeToken.UserInfo.roles;
     next();
   });
 };

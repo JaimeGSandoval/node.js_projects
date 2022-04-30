@@ -36,8 +36,17 @@ const handleLogin = async (req, res) => {
   const match = await bcrypt.compare(pwd, foundUser.password);
 
   if (match) {
+    const roles = Object.values(foundUser.roles);
+
+    // Here we're using UserInfo as a different namespace. it's considered to
+    // be a private jwt claim
     const accessToken = jwt.sign(
-      { username: foundUser.username },
+      {
+        UserInfo: {
+          username: foundUser.username,
+          roles,
+        },
+      },
       process.env.ACCESS_TOKEN_SECRET,
       { expiresIn: '30s' }
     );
@@ -61,6 +70,7 @@ const handleLogin = async (req, res) => {
       JSON.stringify(usersDB.users)
     );
 
+    // When working with thunderClient to test the refresh route, you must remove secure: true from the cookie or else it work because it honors that cookie setting. However, when working with chrome or other browser, or production, it is required
     // 24 * 60 * 60 * 1000 = 1 day
     res.cookie('jwt', refreshToken, {
       httpOnly: true,
