@@ -36,7 +36,8 @@ const handleLogin = async (req, res) => {
   const match = await bcrypt.compare(pwd, foundUser.password);
 
   if (match) {
-    const roles = Object.values(foundUser.roles);
+    // filter(Boolean) is a good trick to remove any null values
+    const roles = Object.values(foundUser.roles).filter(Boolean);
 
     // Here we're using UserInfo as a different namespace. it's considered to
     // be a private jwt claim
@@ -79,18 +80,10 @@ const handleLogin = async (req, res) => {
       secure: true,
     });
 
-    res.status(200).json({
-      status: 'success',
-      message: `User ${user} is logged in`,
-      data: {
-        accessToken,
-      },
-    });
+    // Send authorization roles and access token to user
+    res.json({ roles, accessToken });
   } else {
-    res.status(401).json({
-      status: 'fail',
-      message: 'Incorrect password',
-    });
+    res.sendStatus(401);
   }
 };
 
