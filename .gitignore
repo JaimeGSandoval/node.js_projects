@@ -33,3 +33,4 @@
 /node_server/node_modules
 /access_refresh_authentication/node_modules
 /refresh_token_rotation_api_template
+/rest_api_basics/node_modules
