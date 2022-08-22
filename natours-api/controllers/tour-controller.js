@@ -16,9 +16,16 @@ const Tour = require('../models/tour-model');
 //   next();
 // };
 
+exports.aliasTopTours = (req, res, next) => {
+  req.query.limit = '5';
+  req.query.sort = '-ratingsAverage,price';
+  req.query.fields = 'name,price,ratingsAverage,summary,difficulty';
+  next();
+};
+
 exports.getAllTours = async (req, res) => {
   try {
-    console.log(req.query);
+    // console.log(req.query);
     // BUILD QUERY
     // 1a) Filtering
     const queryObj = { ...req.query };
@@ -30,7 +37,7 @@ exports.getAllTours = async (req, res) => {
     let queryStr = JSON.stringify(queryObj);
     queryStr = queryStr.replace(/\b(gte|gt|lte|lt)\b/g, (match) => `$${match}`);
 
-    // this will return a query object that'll have all the Query methods we need to in order to be able to use the methods below i.e where(), equal(), so we can sort, do pagination etc.
+    // this will return a query object that'll have all the Query methods we need to in order to be able to use the methods below i.e where(), equal(), so we can sort, do pagination etc. Without the await keyword, the query wo't be sent to the DB and only a query object will be returned instead of the documents that meet the query criteria
     let query = Tour.find(JSON.parse(queryStr));
 
     // using mongoose methods
@@ -46,7 +53,7 @@ exports.getAllTours = async (req, res) => {
       query = query.sort(sortBy);
     } else {
       // default sorting value. -createdAt will be in descending order because of the minus sign
-      query = query.sort('-createdAt');
+      query = query.sort('name');
     }
 
     // 3) Field Limiting
@@ -57,6 +64,20 @@ exports.getAllTours = async (req, res) => {
     } else {
       // the minus sign will remove the __v field from the data being returned
       query.select('-__v');
+    }
+
+    // 4) Pagination
+    const page = req.query.page * 1 || 1;
+    const limit = req.query.limit * 1 || 100;
+    const skip = (page - 1) * limit; // all the results before the page we're requesting
+    // skip() is the amount of results that are skipped before querying the data
+    // limit() is the amount of results we want returned
+    // page 1 -> 1-10, page 2 -> 11-20, page 3 -> 21-30
+    query = query.skip(skip).limit(limit);
+
+    if (req.query.page) {
+      const numOfTours = await Tour.countDocuments();
+      if (skip >= numOfTours) throw new Error('This page does not exist'); // throwing an error will automatically trigger the catch block and send back a 404
     }
 
     // EXECUTE QUERY - since we use await here, the returned value will be the documents from the DB, which wouldn't have the Query methods on them
@@ -72,7 +93,7 @@ exports.getAllTours = async (req, res) => {
   } catch (err) {
     res.status(404).json({
       status: 'fail',
-      message: err,
+      message: err.message,
     });
   }
 };
@@ -91,7 +112,7 @@ exports.getTour = async (req, res) => {
   } catch (err) {
     res.status(404).json({
       status: 'fail',
-      message: '',
+      message: err,
     });
   }
 };
