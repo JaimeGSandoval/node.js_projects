@@ -117,7 +117,7 @@ exports.getTourStats = async (req, res) => {
         $group: {
           // _id: '$ratingsAverage',
           _id: '$difficulty',
-          numTours: { $sum: 1 },
+          numTours: { $sum: 1 }, // adds 1 for each document
           numRatings: { $sum: '$ratingsQuantity' },
           avgRating: { $avg: '$ratingsAverage' },
           avgPrice: { $avg: '$price' },
@@ -135,6 +135,60 @@ exports.getTourStats = async (req, res) => {
       status: 'success',
       data: {
         stats,
+      },
+    });
+  } catch (err) {
+    res.status(404).json({
+      status: 'fail',
+      message: err,
+    });
+  }
+};
+
+exports.getMonthlyPlan = async (req, res) => {
+  try {
+    const year = Number(req.params.year); // 2021
+
+    const plan = await Tour.aggregate([
+      {
+        $unwind: '$startDates',
+      },
+      {
+        $match: {
+          startDates: {
+            // between the first day of the year and last day of the year
+            $gte: new Date(`${year}-01-01`),
+            $lte: new Date(`${year}-12-31`),
+          },
+        },
+      },
+      {
+        $group: {
+          _id: { $month: '$startDates' },
+          numTourStarts: { $sum: 1 }, // adds 1 for each document
+          tours: { $push: '$name' }, // places the name of the tour into an array
+        },
+      },
+      {
+        $addFields: { month: '$_id' },
+      },
+      {
+        $project: {
+          _id: 0, // 0 means not to include the _id field in the results
+        },
+      },
+      {
+        $sort: { numTourStarts: -1 }, // -1 means descending order. 1 is ascending
+      },
+      {
+        $limit: 12,
+      },
+    ]);
+
+    res.status(200).json({
+      status: 'success',
+      data: {
+        plan,
       },
     });
   } catch (err) {
