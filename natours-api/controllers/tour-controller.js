@@ -45,7 +45,18 @@ exports.getAllTours = async (req, res) => {
       const sortBy = req.query.sort.split(',').join(' ');
       query = query.sort(sortBy);
     } else {
+      // default sorting value. -createdAt will be in descending order because of the minus sign
       query = query.sort('-createdAt');
+    }
+
+    // 3) Field Limiting
+    // for a client, it's always ideal for a client to receive as little data as possible in order to reduce bandwidth that's consumed with each request
+    if (req.query.fields) {
+      const fields = req.query.fields.split(',').join(' ');
+      query.select(fields);
+    } else {
+      // the minus sign will remove the __v field from the data being returned
+      query.select('-__v');
     }
 
     // EXECUTE QUERY - since we use await here, the returned value will be the documents from the DB, which wouldn't have the Query methods on them
