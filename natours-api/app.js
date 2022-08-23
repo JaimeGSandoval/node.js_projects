@@ -1,5 +1,7 @@
 const express = require('express');
 const morgan = require('morgan');
+const AppError = require('./utils/app-error');
+const globalErrorHandler = require('./controllers/error-controller');
 const tourRouter = require('./routes/tour-routes');
 const userRouter = require('./routes/user-routes');
 
@@ -30,10 +32,10 @@ app.use('/api/v1/tours', tourRouter);
 app.use('/api/v1/users', userRouter);
 
 app.all('*', (req, res, next) => {
-  res.status(404).json({
-    status: 'fail',
-    message: `Can't find ${req.originalUrl}`,
-  });
+  // whatever gets passed into next(), express will know/assume it's an error. This applies for all next() in any part of the app. So express will then skipp all the othr middleware in the middleware stack and set the error that we passed in to our global error handling middleware which will then be executed
+  next(new AppError(`Can't find ${req.originalUrl} on the server`, 404));
 });
+
+app.use(globalErrorHandler);
 
 module.exports = app;
