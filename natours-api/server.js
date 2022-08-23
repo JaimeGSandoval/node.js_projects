@@ -28,4 +28,5 @@ mongoose
 //   .then(() => console.log('Local DB connection successful'));
 
 const port = process.env.PORT || 3000;
+console.log(process.env.NODE_ENV);
 app.listen(port, () => console.log(`App running on port ${port}`));
