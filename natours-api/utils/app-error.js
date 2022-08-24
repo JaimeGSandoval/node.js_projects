@@ -10,6 +10,7 @@ class AppError extends Error {
     this.status = `${statusCode}`.startsWith('4') ? 'fail' : 'error';
     this.isOperational = true; // will be used to test if the error is of the AppError class and only send error messages back to the client for these operational errors we created using this class. This is useful because some other unexpected errors may happen in our app (programming error or bug in a package). These errors will not have the isOperational property on them and we can differentiate between them
 
+    //
     Error.captureStackTrace(this, this.constructor);
   }
 }
