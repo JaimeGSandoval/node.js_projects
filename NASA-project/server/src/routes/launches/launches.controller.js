@@ -31,8 +31,6 @@ async function httpAddNewLaunch(req, res) {
     });
   }
 
-  launch.launchDate = new Date(launch.launchDate);
-
   await scheduleNewLaunch(launch);
   return res.status(201).json(launch);
 }
