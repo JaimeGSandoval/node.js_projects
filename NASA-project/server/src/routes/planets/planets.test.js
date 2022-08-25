@@ -7,10 +7,10 @@ describe('Planets API', () => {
     await mongoConnect();
   });
 
-  describe('GET /launches', () => {
+  describe('GET /v1/planets', () => {
     test('Should respond with 200 success', async () => {
       const response = await request(app)
-        .get('/planets')
+        .get('/v1/planets')
         .expect('Content-Type', /json/)
         .expect(200);
     });
