@@ -17,6 +17,7 @@ exports.signup = catchAsync(async (req, res, next) => {
     password: req.body.password,
     passwordConfirm: req.body.passwordConfirm,
     passwordChangedAt: req.body.passwordChangedAt,
+    role: req.body.role,
   });
 
   // CREATE JSONWEBTOKEN FOR AUTHENTICATION & SEND BACK TO USER
@@ -103,3 +104,17 @@ exports.protect = catchAsync(async (req, res, next) => {
 
   next();
 });
+
+// this is the middleware function itself that is the route handler
+// restrictTo  will is a function that takes ...roles as an argument, which returns another function that has openings for the req, res, and next arguments that get passed to the route handler
+exports.restrictTo =
+  (...roles) =>
+  (req, res, next) => {
+    if (!roles.includes(req.user.role)) {
+      return next(
+        new AppError('You do not have permission to perform this action', 403)
+      );
+    }
+
+    next();
+  };
