@@ -1,5 +1,6 @@
 module.exports = (fn) => (req, res, next) => {
-  fn(req, res, next).catch((err) => next(err));
+  console.log('ERROR FROM CATCH ASYNC');
+  return fn(req, res, next).catch((err) => next(err));
 };
 
 // We know that route handlers/middleware in Express need to take in a function and that function gets called with the (req, res, next) arguments and we want to make it async, so we can do:

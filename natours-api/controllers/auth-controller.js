@@ -1,3 +1,4 @@
+const { promisify } = require('util');
 const jwt = require('jsonwebtoken');
 const User = require('../models/user-model');
 const catchAsync = require('../utils/catch-async');
@@ -15,6 +16,7 @@ exports.signup = catchAsync(async (req, res, next) => {
     email: req.body.email,
     password: req.body.password,
     passwordConfirm: req.body.passwordConfirm,
+    passwordChangedAt: req.body.passwordChangedAt,
   });
 
   // CREATE JSONWEBTOKEN FOR AUTHENTICATION & SEND BACK TO USER
@@ -52,4 +54,52 @@ exports.login = catchAsync(async (req, res, next) => {
     status: 'success',
     token,
   });
+});
+
+// middleware to check if the user is logged in or not to protect routes
+exports.protect = catchAsync(async (req, res, next) => {
+  // a common practice is to send tokens with req in its headers
+  // 1) Get token and check if it's there
+
+  let token;
+
+  if (
+    req.headers.authorization &&
+    req.headers.authorization.startsWith('Bearer')
+  ) {
+    token = req.headers.authorization.split(' ')[1];
+  }
+
+  if (!token) {
+    // trigger the error handling middleware to send an error back to client
+    return next(
+      new AppError('You are not logged in. Please log into get access', 401)
+    );
+  }
+
+  // 2) Verify token
+  // If a function returns a Promise then we can await it inside of an async function. That will wait until the Promise is resolved (i.e. the JWT is verified) before moving on to the rest of the function.
+  const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
+
+  // 3) Check if user still exists
+  // decoded.id is the objectid of the user document
+  const retrievedUser = await User.findById(decoded.id);
+
+  if (!retrievedUser)
+    return next(
+      new AppError('The user belonging to this user no longer exists.', 401)
+    );
+
+  // 4) Check if user changed password after the JWT was issued
+  if (retrievedUser.changedPasswordAfter(decoded.iat)) {
+    return next(
+      new AppError('User recently changed password. Please login again', 401)
+    );
+  }
+
+  // GRANT ACCESS TO PROTECTED ROUTE
+  // create a user property on req.user and store all the user data in it so it can be used by other middleware down the pipeline
+  req.user = retrievedUser;
+
+  next();
 });
