@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const mongoose = require('mongoose');
 const validator = require('validator');
 const bcrypt = require('bcryptjs');
@@ -40,6 +41,8 @@ const userSchema = new mongoose.Schema({
     },
   },
   passwordChangedAt: Date,
+  passwordResetToken: String,
+  passwordResetExpires: Date,
 });
 
 // USE BCRYPT TO HASH USER'S PASSWORD
@@ -50,12 +53,18 @@ userSchema.pre('save', async function (next) {
   // Whenever you change the value of the certain field, the value of isModified will get changed. So user.isModified('password') will be true whenever 'password' gets modified. In the first case, the password value initially would have been empty or null, so it will return true in that case as well.
   if (!this.isModified('password')) return next();
 
-  // if we make it down here a  hash hasn't been created for the password yet, so create hash for user password with salt of 12
+  // if we make it down here a  hash hasn't been created for the password yet, so create hash for user password with salt of 12. We only save sensitive data to the DB in encrypted form
   this.password = await bcrypt.hash(this.password, 12);
 
   // delete value for passwordConfirmed field. Setting to undefined means it won't be included with the data being sent back, too
   this.passwordConfirm = undefined;
 
+  next();
+});
+
+userSchema.pre('save', function (next) {
+  if (!this.isModified || this.isNew) return next();
+  this.passwordChangedAt = Date.now() - 1000;
   next();
 });
 
@@ -81,6 +90,30 @@ userSchema.methods.changedPasswordAfter = function (JWTTimestamp) {
 
   // false means not changed
   return false;
+};
+
+userSchema.methods.createPasswordResetToken = function () {
+  // never store a plain reset token in the DB, just like a password
+  // here we use randomBytes to create cryptographically random data and the number of bytes to be generated into a token, then turn it into a hexedecimal string
+  // this is the token we send to the user. We don't set this token in our DB. If a hacker gains access to the DB they could then use this token and create a new password using this token instead of the user doing it. So just like a password, we should never store a plain reset token in the DB
+  const resetToken = crypto.randomBytes(32).toString('hex');
+
+  // we create an encrypted version of the reset token. this will be stored in the DB. Remember, we only save sensitive data in an encrypted form and compare it to the encrypted version in the DB.
+  // "this" points to the current user that called createPasswordResetToken
+  this.passwordResetToken = crypto
+    .createHash('sha256')
+    .update(resetToken)
+    .digest('hex');
+
+  console.log({ resetToken }, this.passwordResetToken);
+
+  // storing it for 10 minutes
+  // * 60 is for seconds and * 1000 is for milliseconds which makes 10 min
+  // remember this sets the value but it does not save it to the DB. That's done with .save()
+  this.passwordResetExpires = Date.now() + 10 * 60 * 1000;
+
+  // send back plain text token to user's email
+  return resetToken;
 };
 
 const User = mongoose.model('User', userSchema);

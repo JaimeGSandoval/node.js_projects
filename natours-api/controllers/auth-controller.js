@@ -1,8 +1,10 @@
+const crypto = require('crypto');
 const { promisify } = require('util');
 const jwt = require('jsonwebtoken');
 const User = require('../models/user-model');
 const catchAsync = require('../utils/catch-async');
 const AppError = require('../utils/app-error');
+const sendEmail = require('../utils/email');
 
 const signToken = (id) =>
   jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -51,6 +53,7 @@ exports.login = catchAsync(async (req, res, next) => {
   }
 
   const token = signToken(user._id);
+
   res.status(200).json({
     status: 'success',
     token,
@@ -118,3 +121,96 @@ exports.restrictTo =
 
     next();
   };
+
+// BREAKDOWN OF RESETTING A PASSWORD
+// It is really challenging to understand the flow of resetting a password. Let me try to explain it and see whether I am right.
+
+// 1. The user hits the forgotPassword  endpoint from the client and provides an email address (In the backend: We take the email address and find them in our database to know who forgot their password.)
+
+// 2. We create a reset token and send it as a link to the user via email. This is because we assume that email is secure and unique to the user. We include the reset token because each reset token is unique, so that we are able to find out who actually forgot their password, and we can change the person's password to the new one.
+
+// 3. When the user clicks the link and enters a  new password, validation occurs and we  set a new password for the user. We also add a field to indicate at what time the user changed their password. This is used later when user tries to access a protected route using the old token, we can block their access.
+
+// steps for resetting password:
+// 1) user sends a POST request to the /forgotPassword route only with his email address
+// 2) this creates a reset token which gets sent to the email that the user provided in step 1. it's a simple random token, not a jwt
+// 3) the user sends that token they received in their email along with a new password in order to update their password
+
+exports.forgotPassword = catchAsync(async (req, res, next) => {
+  // 1) Get user based on email sent in post request to /forgotPassword route
+  const user = await User.findOne({ email: req.body.email });
+  if (!user)
+    return next(new AppError('There is no user with that email address', 404));
+
+  // 2) Generate the random reset token
+  const resetToken = user.createPasswordResetToken();
+  // validateBeforeSave will deactivate all the validators that are specified in the schema when accessing forgotPassword route
+  await user.save({ validateBeforeSave: false }); // save to DB all the newly set or modified fields
+
+  // 3) Send it to user's email with resetToken created above
+  const resetURL = `${req.protocol}://${req.get(
+    'host'
+  )}/api/v1/users/resetpassword/${resetToken}`;
+
+  const message = `Forgot your password? Submit a PATCH request with your new password and passwordConfirm to: ${resetURL}.\nIf you didn't forget your password please ignore this email.`;
+
+  try {
+    await sendEmail({
+      email: user.email,
+      subject: 'Your password reset token  (valid for 10 min)',
+      message,
+    });
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Token sent to email',
+    });
+  } catch (err) {
+    // remember, this only modifies the data, it doesn't save it
+    user.passwordResetToken = undefined;
+    user.passwordResetExpires = undefined;
+
+    // this saves the data to the DB
+    await user.save({ validateBeforeSave: false });
+
+    return next(
+      new AppError('There was an error sending the email. Try again.', 500)
+    );
+  }
+});
+
+exports.resetPassword = catchAsync(async (req, res, next) => {
+  // 1) Get user based on token
+  // the reset token sent in the url is the non encrypted token, but the one that we have in the DB is encrypted. So we encrypt the token here and compare it with the encrypted one stored in the DB
+  const hashedToken = crypto
+    .createHash('sha256')
+    .update(req.params.token)
+    .digest('hex');
+
+  // the only thing we know about the user right now is the resetToken they sent via the url so we use that to find the user in the db
+  const user = await User.findOne({
+    passwordResetToken: hashedToken,
+    passwordResetExpires: { $gt: Date.now() }, // if the passwordResetExpires is greater than right now, that means it's still valid because it's date is in the future by 10 min or less
+  });
+
+  // 2) if token is not expired and there is a user, set the new password
+  // if the token has expired or user isn't found by hashedToken, then findOne will not return a user
+  if (!user) return next(new AppError('Token is invalid or has expired', 400));
+
+  user.password = req.body.password;
+  user.passwordConfirm = req.body.passwordConfirm;
+  user.passwordResetToken = undefined;
+  user.passwordResetExpires = undefined;
+
+  // we don't turn off the validators because we want them to confirm the password is equal to passwordConfirm
+  await user.save();
+
+  // 3) Update the changedPasswordAt property for the user
+  const token = signToken(user._id);
+
+  // 4) Log the user in by sending a jwt to them
+  res.status(200).json({
+    status: 'success',
+    token,
+  });
+});
