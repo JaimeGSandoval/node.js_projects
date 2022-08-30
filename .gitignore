@@ -5,6 +5,7 @@
 /starter
 /natours/node_modules
 /natours/final_jonas
+/natours-api/config.env
 .env
 /express-tutorial
 /node-express-form/node_modules

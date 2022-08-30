@@ -12,11 +12,15 @@ const signToken = (id) =>
     expiresIn: process.env.JWT_EXPIRES_IN,
   });
 
+// COOKIE: a cookie is just a small piece of text that a server can send to clients. When the client receives a cookie it will automatically store it and then automatically send it back along with all future requests to the server. A browser automatically stores a cookie that it receives and sends it back in all future requests to the server where it came from
+
 const createSendToken = (user, statusCode, res) => {
   // CREATE JSONWEBTOKEN FOR AUTHENTICATION & SEND BACK TO USER
   // newUser._id is the id that's given to the user from mongodb
   // the value for JWT_SECRET should be 32 characters long
   const token = signToken(user._id);
+
+  res.cookie('jwt', token, {});
 
   res.status(statusCode).json({
     status: 'success',
