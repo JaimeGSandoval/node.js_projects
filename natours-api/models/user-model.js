@@ -43,10 +43,16 @@ const userSchema = new mongoose.Schema({
   passwordChangedAt: Date,
   passwordResetToken: String,
   passwordResetExpires: Date,
+  active: {
+    type: Boolean,
+    default: true,
+    select: false,
+  },
 });
 
 // USE BCRYPT TO HASH USER'S PASSWORD
 // before saving the document to the DB, we hash the password with bcrypt. This happens in the middle of receiving the data from the user and when we save the data to the DB
+// query middleware
 userSchema.pre('save', async function (next) {
   // only runs if the password is new or if its been changed. i.e. if the user is only updating the email, we don't want to encrypt the password again. this.isModified checks the current document/user's field that we check has been modified. So if the password has not been modified .i.e the user isn't
 
@@ -62,9 +68,20 @@ userSchema.pre('save', async function (next) {
   next();
 });
 
+// query middleware
 userSchema.pre('save', function (next) {
   if (!this.isModified || this.isNew) return next();
+  // hack that uses ' - 1000' to create a small delay so that the jwt token is created 1 second after the date being set here
   this.passwordChangedAt = Date.now() - 1000;
+  next();
+});
+
+// query middleware
+// the 'find' will apply to all queries that contain the word 'find' in them .i.e find, findById, findByIdAndUpdate, etc
+// this middleware will fire before every query and gives the instruction to only retrieve documents/users with active set to true
+userSchema.pre(/^find/, function (next) {
+  // 'this' points to the current query
+  this.find({ active: { $ne: false } });
   next();
 });
 
