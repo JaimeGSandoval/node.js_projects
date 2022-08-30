@@ -12,6 +12,19 @@ const signToken = (id) =>
     expiresIn: process.env.JWT_EXPIRES_IN,
   });
 
+const createSendToken = (user, statusCode, res) => {
+  // CREATE JSONWEBTOKEN FOR AUTHENTICATION & SEND BACK TO USER
+  // newUser._id is the id that's given to the user from mongodb
+  // the value for JWT_SECRET should be 32 characters long
+  const token = signToken(user._id);
+
+  res.status(statusCode).json({
+    status: 'success',
+    token,
+    user,
+  });
+};
+
 exports.signup = catchAsync(async (req, res, next) => {
   const newUser = await User.create({
     name: req.body.name,
@@ -22,17 +35,8 @@ exports.signup = catchAsync(async (req, res, next) => {
     role: req.body.role,
   });
 
-  // CREATE JSONWEBTOKEN FOR AUTHENTICATION & SEND BACK TO USER
-  // newUser._id is the id that's given to the user from mongodb
-  // the value for JWT_SECRET should be 32 characters long
-  const token = signToken(newUser._id);
-
   // we send back the token to log the user in as a result of signing up
-  res.status(201).json({
-    status: 'success',
-    token,
-    user: newUser,
-  });
+  createSendToken(newUser, 200, res);
 });
 
 exports.login = catchAsync(async (req, res, next) => {
@@ -47,17 +51,12 @@ exports.login = catchAsync(async (req, res, next) => {
   // use +password to include password because it's  not automatically being sent back from the DB to the server
   const user = await User.findOne({ email }).select('+password');
 
-  // 3) If everything is ok, send token to client
   if (!user || !(await user.correctPassword(password, user.password))) {
     return next(new AppError('Incorrect email or password', 401));
   }
 
-  const token = signToken(user._id);
-
-  res.status(200).json({
-    status: 'success',
-    token,
-  });
+  // 3) If everything is ok, send token to client
+  createSendToken(user, 200, res);
 });
 
 // middleware to check if the user is logged in or not to protect routes
@@ -206,11 +205,31 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
   await user.save();
 
   // 3) Update the changedPasswordAt property for the user
-  const token = signToken(user._id);
 
   // 4) Log the user in by sending a jwt to them
-  res.status(200).json({
-    status: 'success',
-    token,
-  });
+  createSendToken(user, 200, res);
+});
+
+// this update password functionality is only for logged in users
+exports.updatePassword = catchAsync(async (req, res, next) => {
+  // you must always ask for the user's current password before updating to a new password
+  // user id comes from the jwt
+  console.log('USER', req.user.id);
+
+  // 1) Get user from collection
+  const user = await User.findById(req.user.id).select('+password');
+
+  // 2) Check if POSTed current password from user input is correct
+  if (!(await user.correctPassword(req.body.passwordCurrent, user.password))) {
+    return next(new AppError('Your current password is wrong', 401));
+  }
+
+  // 3) If so, update password
+  user.password = req.body.password;
+  user.passwordConfirm = req.body.passwordConfirm;
+  await user.save();
+  // remember, we use user.save() and not User.findByIdAndUpdate() because the user will not be defined when using User.findByIdAndUpdate and if we need to access or update properties that belong to a specific user by using 'this' the properties won't be defined
+
+  // 4) Log user in, send JWT back to client
+  createSendToken(user, 200, res);
 });
