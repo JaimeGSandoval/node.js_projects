@@ -1,5 +1,6 @@
 const express = require('express');
 const morgan = require('morgan');
+const rateLimit = require('express-rate-limit');
 const AppError = require('./utils/app-error');
 const globalErrorHandler = require('./controllers/error-controller');
 const tourRouter = require('./routes/tour-routes');
@@ -7,10 +8,20 @@ const userRouter = require('./routes/user-routes');
 
 const app = express();
 
-// MIDDLEWARE
+// GLOBAL MIDDLEWARES
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
+
+// rate limiting prevents the same IP from making too many requests to our API. This will help prevent attacks like denial of service or brute force attacks. If the app crashes or restarts, it resets the rate limit back to 100
+const rateLimiter = rateLimit({
+  max: 100, // allows 100 requests per hour
+  // minutes * seconds * milliseconds to equal an hour
+  windowMs: 60 * 60 * 1000,
+  message: 'Too many requests from this IP. Please try again in an hour.',
+});
+
+app.use('/api', rateLimiter);
 
 app.use(express.json());
 app.use(express.static(`${__dirname}/public`));
