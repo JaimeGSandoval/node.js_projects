@@ -2,6 +2,8 @@ const express = require('express');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
+const mongoSanitize = require('express-mongo-sanitize');
+const xss = require('xss-clean');
 const AppError = require('./utils/app-error');
 const globalErrorHandler = require('./controllers/error-controller');
 const tourRouter = require('./routes/tour-routes');
@@ -37,6 +39,16 @@ app.use(
     limit: '10kb', // limit the amount of data that comes in the body
   })
 );
+
+// DATA SANITIZATION AGAINST NOSQL QUERY INJECTION
+// {$gt: {''}} example of nosql query injection. instead of signing up with an email, someone could use this and if the attacker has  a valid password that's easy to figure out, they could be signed up and given a password token. This happens because{$gt:{}} evaluates to true
+app.use(mongoSanitize()); // looks at request body, request string and request params and will filter out all of the dollar signs and dots because that's how mongo DB queries are written. By removing them the operators will no longer work and nullify the attack
+
+// DATA SANITIZATION AGAINST XSS ATTACKS
+app.use(xss()); // cleans any user input from malicious html code ie some malicious html code with js attached to it. if it were to be injected into pour html, it could cause damage. xss-clean will turn any html into an html entity.
+// So "<div id='bad code'>Name</div>" turns into "&lt;div id='bad code'>Name&lt;/div>"
+
+// *** whenever you can, add some validation to your mongo schemas and that should mostly protect you from xss on the server side
 
 // SERVING STATIC FILES
 app.use(express.static(`${__dirname}/public`));

@@ -70,9 +70,9 @@ exports.login = catchAsync(async (req, res, next) => {
   // use +password to include password because it's  not automatically being sent back from the DB to the server
   const user = await User.findOne({ email }).select('+password');
 
-  if (!user || !(await user.correctPassword(password, user.password))) {
-    return next(new AppError('Incorrect email or password', 401));
-  }
+  // if (!user || !(await user.correctPassword(password, user.password))) {
+  //   return next(new AppError('Incorrect email or password', 401));
+  // }
 
   // 3) If everything is ok, send token to client
   createSendToken(user, 200, res);
