@@ -1,6 +1,7 @@
 const express = require('express');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
+const helmet = require('helmet');
 const AppError = require('./utils/app-error');
 const globalErrorHandler = require('./controllers/error-controller');
 const tourRouter = require('./routes/tour-routes');
@@ -9,10 +10,17 @@ const userRouter = require('./routes/user-routes');
 const app = express();
 
 // GLOBAL MIDDLEWARES
+
+// SET SECURITY HTTP HEADERS
+// use helmet early in the middleware stack so that headers are set for sure
+app.use(helmet());
+
+// DEVELOPMENT LOGGING
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
 
+// LIMIT REQUESTS FROM SAME IP
 // rate limiting prevents the same IP from making too many requests to our API. This will help prevent attacks like denial of service or brute force attacks. If the app crashes or restarts, it resets the rate limit back to 100
 const rateLimiter = rateLimit({
   max: 100, // allows 100 requests per hour
@@ -23,9 +31,17 @@ const rateLimiter = rateLimit({
 
 app.use('/api', rateLimiter);
 
-app.use(express.json());
+// BODY PARSER
+app.use(
+  express.json({
+    limit: '10kb', // limit the amount of data that comes in the body
+  })
+);
+
+// SERVING STATIC FILES
 app.use(express.static(`${__dirname}/public`));
 
+// TEST MIDDLEWARE
 app.use((req, res, next) => {
   // console.log(x); this will cause an uncaught exception error. Any middleware in express will automatically go to the error handling middleware with that error.So any error in middleware will automatically go to the error handling in error-controller.js
   // console.log(x);
