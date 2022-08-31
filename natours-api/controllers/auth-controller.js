@@ -20,7 +20,22 @@ const createSendToken = (user, statusCode, res) => {
   // the value for JWT_SECRET should be 32 characters long
   const token = signToken(user._id);
 
-  res.cookie('jwt', token, {});
+  const cookieOptions = {
+    // CONVERT DAYS TO MILLISECONDS
+    // hours * minutes * seconds * milliseconds
+    expires: new Date(
+      Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000
+    ),
+    // secure: true, // cookie will only be sent on an encrypted connection ie https which would only be during production
+    httpOnly: true, // makes it so cookie cannot be accessed or modified by or in the browser
+  };
+
+  if (process.env.NODE_ENV === 'production') cookieOptions.secure = true;
+
+  res.cookie('jwt', token, cookieOptions);
+
+  // set to undefined so the password does not get sent back with the response
+  user.password = undefined;
 
   res.status(statusCode).json({
     status: 'success',
