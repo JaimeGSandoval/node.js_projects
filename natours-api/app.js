@@ -4,6 +4,7 @@ const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
 const mongoSanitize = require('express-mongo-sanitize');
 const xss = require('xss-clean');
+const hpp = require('hpp');
 const AppError = require('./utils/app-error');
 const globalErrorHandler = require('./controllers/error-controller');
 const tourRouter = require('./routes/tour-routes');
@@ -49,6 +50,24 @@ app.use(xss()); // cleans any user input from malicious html code ie some malici
 // So "<div id='bad code'>Name</div>" turns into "&lt;div id='bad code'>Name&lt;/div>"
 
 // *** whenever you can, add some validation to your mongo schemas and that should mostly protect you from xss on the server side
+
+// PREVENT PARAMETER POLLUTION
+// hpp -> http parameter pollution
+// if in the query you send ?sort=duration&sort=price then express will create an array with the two values. this is a problem that attackers ca make use of
+// this will remove the duplicate fields in the query
+app.use(
+  hpp({
+    // you can make a white list of fields that can have duplicates in the url query
+    whitelist: [
+      'duration',
+      'ratingsQuality',
+      'ratingsAverage',
+      'maxGroupSize',
+      'difficulty',
+      'price',
+    ],
+  })
+);
 
 // SERVING STATIC FILES
 app.use(express.static(`${__dirname}/public`));
